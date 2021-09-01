@@ -1,0 +1,207 @@
+
+body {
+        background-color: #1D1F20;
+}
+
+.container {
+        margin-top: 40px;
+        padding-top: 20px;        /*background-color: #beb*/
+}
+
+.vertical {
+        display: inline-block;
+        width: 200px;
+        height: 150px;
+        -webkit-transform: rotate(-90deg); /* Chrome, Safari, Opera */
+        transform: rotate(-90deg);
+}
+
+.vertical {
+        box-shadow: inset 0px 4px 6px #ccc;
+}
+
+.progress-bar {
+        box-shadow: inset 0px 4px 6px rgba(100, 100, 100, 0.6);
+
+}
+.progress{
+        margin-left: -25px;
+        margin-top: 40px;
+}
+
+.circle-tile {
+        padding-top: 10px;
+        text-align: center;
+}
+
+.circle-tile-heading {
+        position: relative;
+        width: 60px;
+        height: 60px;
+        margin: 0 auto -40px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 100%;
+        color: #fff;
+        transition: all ease-in-out .3s;
+}
+
+/* -- Background Helper Classes */
+
+/* Use these to cuztomize the background color of a div. These are used along with tiles, or any other div you want to customize. */
+.dark-blue {
+        background-color: #34495e;
+}
+
+.green {
+        background-color: #16a085;
+}
+
+.blue {
+        background-color: #2980b9;
+}
+
+.purple {
+        background-color: #AD1A40;
+}
+
+.dark-gray {
+        background-color: #7f8c8d;
+}
+
+.gray {
+        background-color: #95a5a6;
+}
+
+.light-gray {
+        background-color: #bdc3c7;
+}
+
+/* -- Text Color Helper Classes */
+.text-dark-blue {
+        color: #34495e;
+}
+
+.text-green {
+        color: #16a085;
+}
+
+.text-blue {
+        color: #2980b9;
+}
+
+.text-purple {
+        color: #8e44ad;
+}
+
+.text-faded {
+        color: rgba(255, 255, 255, 0.7);
+}
+
+.circle-tile-heading .fa {
+        line-height: 60px;
+}
+
+.circle-tile-content {
+        padding-top: 25px;
+}
+
+.circle-tile-description {
+        text-transform: uppercase;
+}
+
+.text-faded {
+        color: rgba(255, 255, 255, 0.7);
+}
+
+.circle-tile-number {
+        padding: 5px 0 15px;
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1;
+}
+
+.circle-tile-footer {
+        display: block;
+        padding: 5px;
+        color: rgba(255, 255, 255, 0.5);
+        background-color: rgba(0, 0, 0, 0.1);
+        transition: all ease-in-out .3s;
+}
+
+.circle-tile-footer:hover {
+        text-decoration: none;
+        color: rgba(255, 255, 255, 0.5);
+        background-color: rgba(0, 0, 0, 0.2);
+}
+
+.tile-img {
+        text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.9);
+}
+
+.tile {
+        margin-bottom: 15px;
+        padding: 15px;
+        overflow: hidden;
+        color: #fff;
+}
+
+.col-lg-1 {
+        width: 35.33333333%;
+}
+
+.col-sm-6 {
+      width: 30%;  
+}
+.col-sm-4
+{
+        width: 40%;
+}
+.col-sm-1, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-sm-10, .col-sm-11, .col-sm-12 {
+        float: left;
+}
+
+.circle-tile {
+        padding-top: 10px;
+        text-align: center;
+}
+
+.circle-tile-heading {
+        position: relative;
+        width: 60px;
+        height: 60px;
+        margin: 0 auto -40px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 100%;
+        color: #fff;
+        transition: all ease-in-out .3s;
+}
+
+.tile-img {
+        text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.9);
+}
+
+.tile {
+        margin-bottom: 15px;
+        padding: 15px;
+        overflow: hidden;
+        color: #fff;
+}
+
+.btn-block {
+        display: block;
+        width: 100%;
+        margin-top: 10px;
+        padding-bottom: 40px;
+}
+
+.btn-block + .btn-block {
+        margin-top: 5px;
+}
+
+.btn-lg, .btn-group-lg > .btn {
+        font-weight: bold;
+        padding: 13px 16px;
+        font-size: 30px;
+        line-height: 1.3333333;
+        border-radius: 6px;
+}

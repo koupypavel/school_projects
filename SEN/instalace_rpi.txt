@@ -1,0 +1,74 @@
+﻿Instalace MQTT brokera Mosqutto na Raspberry PI
+-------------------------------------------------
+
+wget http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key
+sudo apt-key add mosquitto-repo.gpg.key
+
+cd /etc/apt/sources.list.d/
+sudo wget http://repo.mosquitto.org/debian/mosquitto-stretch.list
+sudo apt-get update
+sudo apt-get install mosquitto mosquitto-clients mosquitto-dev
+
+to config password : 
+sudo service mosquitto stop
+
+sudo mosquitto_passwd -c /etc/mosqruitto/passwd
+
+Rerun ::
+sudo mosquitto -c /etc/mosquitto/passwd
+
+
+-------------------------
+Příprava prostředí :
+-------------------------
+sudo apt-get install chromium-browser
+sudo apt-get install apache2
+sudo apt-get install php libapache2-mod-php
+
+-----------------------------
+php mosquitto client - web
+-----------------------------
+sudo apt-get install php-pear
+sudo apt-get install php-dev
+sudo apt-get install libmosquitto-dev
+sudo pecl install Mosquitto-alpha
+
+cd /etc/php/7.0/mods-available 
+sudo nano mosquitto.ini
+    - add "extension=mosquitto.so"
+
+sudo phpenmod mosquitto
+sudo service apache2 restart
+
+-----------------------------
+python paho client - mqtt2DB script
+-----------------------------
+-----------------------------
+Databáze :
+-----------------------------
+sudo apt install mysql-server php-mysql
+
+DROP USER 'root'@'localhost';
+CREATE USER 'root'@'localhost' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'
+
+create database sen_iot;
+create table sen_iot.sensor(
+   id INT NOT NULL AUTO_INCREMENT,
+   name VARCHAR(100) NOT NULL,
+   type INT NOT NULL,
+   refresh_rate INT NOT NULL,
+   place VARCHAR(100),
+   PRIMARY KEY ( id )
+);
+
+create table sen_iot.data(
+    id INT NOT NULL AUTO_INCREMENT,
+    sensor_id INT NOT NULL,
+    quantity_type VARCHAR(40) NOT NULL,
+    quantity VARCHAR(40) NOT NULL,
+    value INT NOT NULL,
+    time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY ( id ),
+    FOREIGN KEY (sensor_id) REFERENCES sensor(id)
+);

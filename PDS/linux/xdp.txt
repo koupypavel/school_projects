@@ -1,0 +1,6 @@
+Pokud je použit tutorial XDP, je tam loader pro XDP program, který umožnuje i vytváření map.
+sudo ./xdp_loader -A -F -d eth0 --filename xdp_prog_kern.o --progsec xdp_eth
+nebo iproute2, ale ten neumí vytvařet mapy ani pracovat s bpf prostorem.
+ip link set dev lo xdpgeneric obj xdp_prog_kern.o sec xdp_eth
+
+sudo ip link set dev eth0 xdpgeneric off
