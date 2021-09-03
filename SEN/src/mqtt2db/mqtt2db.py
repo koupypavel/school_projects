@@ -13,7 +13,7 @@ import time
 id_list = []
 db_config = {
     'user': 'root',
-    'password': 'mrkev1234',
+    'password': 'pi',
     'host': 'localhost',
     'database': 'sen_iot',
     'raise_on_warnings': True,
@@ -33,7 +33,7 @@ def on_message(client, userdata, msg):
 
 # MQTT klient
 client = paho.Client()
-client.username_pw_set('pi', 'canlab5586')
+client.username_pw_set('pi', 'pi')
 client.on_message = on_message
 client.connect('localhost', 1883)
 
