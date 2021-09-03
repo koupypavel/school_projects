@@ -26,14 +26,14 @@ void subscribeCallback(char* topic, byte* payload, unsigned int length);
 
 /* definice Wifi*/
 //zatim napevno
-#define WIFI_SSID           "WLAN_260"      //ssid
-#define WIFI_PASSWORD       "polda2541"     //passwd
+#define WIFI_SSID           "pi"      //ssid
+#define WIFI_PASSWORD       "pi"     //passwd
 
 /* deifinice MQTT*/
 //zatim napevno
-#define MQTT_SERVER         "10.0.0.7"      // ip MQTT brokera
+#define MQTT_SERVER         "localhost"      // ip MQTT brokera
 #define MQTT_USER           "pi"            // login
-#define MQTT_PASSWORD       "mrkev1234"    // passwd
+#define MQTT_PASSWORD       "pi"    // passwd
 
 /* topics pro pub a sub operace */
 #define TOPIC_TEMPERATURE   "uwls/raw/temp"       // Topic teplota xx.x Celsia
