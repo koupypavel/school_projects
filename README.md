@@ -1,6 +1,6 @@
 # school_projects
 
-Selection of most interesting projects on VUT FIT. Including bachelor project where I tried to tackled basis of robotics and OpenCV image processing. 
+Selection of most interesting projects on VUT FIT. Including bachelor project where I tried to tackle basis of robotics and OpenCV image processing. 
 
 ## Description
 BP - Bachelor project. Build of small automatic vehicle with Mecanum wheels and camera. OpenCV, ROS based software capable of creating 3D map of its surroundings based on ORB-SLAM2
