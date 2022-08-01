@@ -9,6 +9,6 @@ NAV - Project based on Hexiwear watches and Raspberry Pi with small touchscreen 
 
 PDS - Raspberry Pi project that goes deeper into linux networking and usage of XDP to speed up rounting on Debian based OS - Raspbian.
 
-SEN - ESP32 based embedded device used for ultrasonic water level measurement. Battery powered, charched by small solar cell. MQTT data broadcast to connected WI-Fi. 
+SEN - ESP32 based embedded device used for ultrasonic water level measurement. Battery powered, rechargeable by a small solar cell. MQTT data broadcast to connected WI-Fi. 
 
 SIN - Demonstration of usage home automatization framework with ESP based HW examples
