@@ -1,8 +1,8 @@
 # school_projects
 
-A selection of the most interesting projects from my studies at **Brno University of Technology, Faculty of Information Technology (VUT FIT)**. They range from robotics and computer vision to embedded IoT devices and Linux networking, and they include my bachelor's thesis.
+Course projects and the bachelor's thesis from **Brno University of Technology, Faculty of Information Technology (BUT FIT)**. Topics: mobile robotics and visual SLAM, embedded IoT devices (ESP32/ESP8266, MQTT), and Linux packet processing (XDP/eBPF).
 
-Each project has its own English README, adapted from the original Czech documentation (`dokumentace.pdf` in each folder).
+Each project folder contains an English README adapted from the original Czech documentation (`dokumentace.pdf`).
 
 <p align="center">
   <img src="BP/docs/images/final-build.jpg" alt="Mapping vehicle from the bachelor's thesis" width="360">

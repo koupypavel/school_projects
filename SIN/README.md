@@ -1,9 +1,9 @@
 # IoT – Survey and Demonstration of Open-Source Tools
 
 **Course project (SIN)** · Brno University of Technology, Faculty of Information Technology · 2018/2019
-**Author:** Bc. Pavel Koupý
+**Author:** Pavel Koupý
 
-> English adaptation of the original Czech documentation ([`dokumentace.pdf`](dokumentace.pdf)). The text is translated and lightly condensed. Diagrams copied from third-party framework documentation are not reproduced; links to the original sources are given instead.
+> English adaptation of the original Czech documentation ([`dokumentace.pdf`](dokumentace.pdf)), translated and condensed. Diagrams taken from third-party framework documentation are not reproduced; links to the original sources are given instead.
 
 <p align="center">
   <img src="docs/images/final-dashboard.jpg" alt="Final ThingsBoard dashboard" width="620">
@@ -11,7 +11,7 @@
 
 ## Abstract
 
-This project surveys available open-source tools and frameworks for monitoring and controlling IoT systems, and demonstrates one of them. The demo includes a dashboard for visualization, a database and simple control of devices built on the **ESP32** and **ESP8266** microcontrollers. The devices communicate over **MQTT**. The demo consists of simple sensors (temperature and humidity) and relay modules as actuators.
+Survey of open-source frameworks for monitoring and controlling IoT systems (ThingsBoard, DeviceHive, Freedomotic) and a demonstration built on ThingsBoard. The demonstration comprises a dashboard, a database and device control for **ESP32** and **ESP8266** nodes communicating over **MQTT**: a temperature/humidity sensor and relay/LED actuators.
 
 **Keywords:** IoT, ThingsBoard, DeviceHive, Freedomotic, MQTT, ESP32, ESP8266, home automation
 
@@ -35,29 +35,31 @@ This project surveys available open-source tools and frameworks for monitoring a
 
 ## 1. Technology survey
 
-The survey started from comparisons on web portals that pointed to software popular in the open-source IoT community. A second starting point, and really the motivation, was experience with a bare-metal solution [[1]](#references) built without any tools for managing and monitoring IoT devices. From that point of view it always seems better to start from one of the freely available solutions, as these technologies are the current trend.
+Candidate tools were selected from comparisons on web portals covering software widely used in the open-source IoT community. Reference point: a previous bare-metal implementation [[1]](#references) without any IoT management or monitoring tooling.
 
-For the final design of any IoT device, the important factors are:
+Evaluation criteria for an IoT device design:
 
-- the available **communication protocols**,
-- the range of supported **third-party technologies**, both hardware and software,
-- how quickly things can be **integrated and put into operation**.
-
-From the user's point of view, an important feature is how the system models **hierarchical relationships** that reflect real-world use: how individual devices relate to individual users and roles in the information system or IoT middleware.
+| Criterion | Description |
+|---|---|
+| Communication protocols | Application-layer protocols supported for device connectivity |
+| Third-party support | Supported external hardware and software technologies |
+| Integration effort | Time required to integrate and commission a device |
+| Hierarchy modelling | Mapping of devices to users and roles in the information system / middleware |
 
 ## 2. Frameworks and middleware
 
-IoT tools are usually built as a **monolithic system** that contains everything needed for data extraction, analysis, control and possibly visualization. A newer approach is a **microservice architecture**, where the parts of the IoT framework or middleware are split into separate, loosely cooperating processes. This lets the application be built and extended step by step without touching the whole thing. Development scales better, and integrating a new component doesn't require changes to a monolithic system.
+Two architectural patterns are relevant:
+
+- **Monolithic system** – a single application containing data extraction, analysis, control and, optionally, visualization.
+- **Microservice architecture** – framework/middleware components run as separate, loosely coupled processes. Components can be added or extended independently, without modifying the whole system.
 
 ### 2.1 ThingsBoard
 
-[ThingsBoard](https://thingsboard.io) [[3]](#references) provides both an information system for management and control and a framework in the form of a **gateway** application. The gateway mainly collects data from third-party technologies and passes it on to the information system for processing.
-
-ThingsBoard was chosen for the demonstration, so it is described in more detail here. The principles described also apply to the other tools. It can be installed manually or with [Docker](https://www.docker.com/).
+[ThingsBoard](https://thingsboard.io) [[3]](#references) provides an information system for management and control, plus a **gateway** application that collects data from third-party technologies and forwards it to the information system. ThingsBoard is the framework used for the demonstration. Installation: manual installer or [Docker](https://www.docker.com/).
 
 #### Data collection
 
-At the application layer, devices can use **MQTT**, [CoAP](http://coap.technology/) or **HTTP**. MQTT, which the demo uses, sends messages as **JSON**, in one of two ways:
+Supported device protocols (application layer): **MQTT**, [CoAP](http://coap.technology/), **HTTP**. The demonstration uses MQTT with **JSON** payloads. Two data paths exist:
 
 **a) Telemetry sent directly to the ThingsBoard instance**
 
@@ -79,11 +81,13 @@ flowchart LR
 ```
 <p align="center"><em>Figure 1: Telemetry sent directly to the instance (redrawn after the ThingsBoard documentation)</em></p>
 
-The device firmware needs an MQTT client and callback functions for telemetry requests, which are also JSON. Incoming data enters the **Rule Engine**, the flow-control logic for incoming data. Based on its analysis, it produces responses such as requests, e-mails or alarms. Telemetry is stored in the database and can be visualized with ready-made widgets: gauges, switches, charts and so on.
+- Device firmware requires an MQTT client and callback functions for telemetry requests (JSON).
+- Incoming messages are processed by the **Rule Engine** (message flow-control logic), which emits requests, e-mails or alarms.
+- Telemetry is persisted in the database and rendered by widgets (gauges, switches, charts, etc.).
 
 **b) Data sent through the gateway**
 
-The second way is meant for integrating third-party technologies, for example an external MQTT broker. The **ThingsBoard IoT Gateway** is shipped as an installation package for Linux, Windows and Raspberry Pi. It forwards the data to the information system over MQTT, and it can integrate other protocols such as ZigBee or LoRaWAN.
+Intended for third-party integration, e.g. an external MQTT broker. The **ThingsBoard IoT Gateway** is distributed as an installation package for Linux, Windows and Raspberry Pi, forwards data to the information system over MQTT, and supports additional protocols (e.g. ZigBee, LoRaWAN).
 
 ```mermaid
 flowchart LR
@@ -110,18 +114,23 @@ flowchart LR
 
 #### User interface
 
-The information system lets you group devices into larger units (buildings), and assign those units to locations and to individual customers. This hierarchy is pleasant to work with and close to reality.
-
-Control logic is configured with **Rule Chains** in a graphical editor; they decide what happens when a message arrives. The default setup contains a switch for four kinds of messages, in particular telemetry and remote procedure calls ([RPC](https://thingsboard.io/docs/user-guide/rpc/)).
+- **Asset hierarchy:** devices are grouped into larger units (buildings), which are assigned to locations and customers.
+- **Rule Chains:** control logic defined in a graphical editor; determines message handling. The default root chain contains a switch for four message types, including telemetry and remote procedure calls ([RPC](https://thingsboard.io/docs/user-guide/rpc/)).
 
 <p align="center">
   <img src="docs/images/thingsboard-rule-chain.jpg" alt="ThingsBoard root rule chain" width="720"><br>
   <em>Figure 3: Rule Chains</em>
 </p>
 
-The system supports [multitenancy](https://en.wikipedia.org/wiki/Multitenancy): one instance is shared by several separate business units, companies or institutions, so these groups and their administrators must be kept apart. The **system administrator** has the highest rights and creates **tenant administrators**. They can add and group devices and customers, create dashboards and so on. **Customers** only have a role that lets them read their own dashboards and devices.
+**Multitenancy** ([definition](https://en.wikipedia.org/wiki/Multitenancy)): one instance is shared by isolated business units, companies or institutions. Roles:
 
-Devices are identified by an **access token** or an **X.509 certificate**. For each device you can set alarms (reactions to events) and view the latest telemetry and the device attributes.
+| Role | Permissions |
+|---|---|
+| System administrator | Highest privileges; creates tenant administrators |
+| Tenant administrator | Adds and groups devices and customers, creates dashboards |
+| Customer | Read-only access to own dashboards and devices |
+
+Device authentication: **access token** or **X.509 certificate**. Per device: alarm configuration (event reactions), latest telemetry, device attributes.
 
 <p align="center">
   <img src="docs/images/thingsboard-device-credentials.jpg" alt="Device credentials dialog with an access token" width="620"><br>
@@ -130,34 +139,50 @@ Devices are identified by an **access token** or an **X.509 certificate**. For e
 
 #### Visualization
 
-Device telemetry and attributes are visualized with predefined **widgets**. Data are mapped onto them to monitor or control the device.
+Telemetry and attributes are mapped onto predefined **widgets** for monitoring or control.
 
 <p align="center">
   <img src="docs/images/thingsboard-widget-library.jpg" alt="ThingsBoard analogue gauge widgets" width="620"><br>
   <em>Figure 5: Widgets available for visualization</em>
 </p>
 
-Out of the box there are various gauges, control elements, GPIO controls, charts and maps. These can be combined into **dashboards**. You can also create your own widgets, and everything can be customized down to the JavaScript level, which is a big plus.
+- Built-in widget types: gauges, control elements, GPIO controls, charts, maps.
+- Widgets are composed into **dashboards**.
+- Custom widgets are supported; all widgets are customizable at the JavaScript level.
 
-For the demo, ThingsBoard was installed with the installer, which requires a database server as a prerequisite, here **PostgreSQL**.
+Demonstration deployment: ThingsBoard installed via the installer, with **PostgreSQL** as the required database server.
 
 ### 2.2 DeviceHive
 
-[DeviceHive](https://docs.devicehive.com/) [[4]](#references) is built on a **microservice architecture** with plugin support (see the [architecture diagram](https://docs.devicehive.com/) in its documentation). Plugins are managed with [Swagger](https://swagger.io). Communication uses JSON messages, with authentication by [JSON Web Tokens](https://jwt.io/). Unlike ThingsBoard, it doesn't provide middleware with a full information system. It also uses a PostgreSQL database.
+[DeviceHive](https://docs.devicehive.com/) [[4]](#references):
 
-Relevant to this project, the developers provide [firmware](https://github.com/devicehive/esp8266-firmware) for collecting data and connecting an ESP8266 to the DeviceHive cloud. Messages are carried by the **WebSocket Kafka Proxy** microservice.
+| Property | Value |
+|---|---|
+| Architecture | Microservices with plugin support ([architecture diagram](https://docs.devicehive.com/)) |
+| Plugin management | [Swagger](https://swagger.io) |
+| Message format | JSON |
+| Authentication | [JSON Web Tokens](https://jwt.io/) |
+| Database | PostgreSQL |
+| Message transport | **WebSocket Kafka Proxy** microservice |
+| Visualization | **Grafana** plugin |
+| ESP8266 support | Official [firmware](https://github.com/devicehive/esp8266-firmware) for data collection and connection to the DeviceHive cloud |
 
-**Visualization** is done with the **Grafana** plugin.
+Unlike ThingsBoard, DeviceHive does not include middleware with a full information system.
 
 ### 2.3 Freedomotic
 
-[Freedomotic](https://freedomotic-user-manual.readthedocs.io) [[2]](#references) is an interesting IoT framework focused on **high-level commands in natural language**. It works with a map of the environment, the objects in it and the people in it. Messages look like "turn on the light in the kitchen" and are handled by a natural-language processor. At the time of writing the system was in an advanced beta.
+[Freedomotic](https://freedomotic-user-manual.readthedocs.io) [[2]](#references) is an IoT framework based on **high-level natural-language commands**. Status at the time of writing: advanced beta.
 
-Behaviour rules together with the language processor let you build automations from natural-language sentences, e.g. "If it is dark outside, turn on the light in the room". The documentation describes how events, plugins, triggers and other components interact. **Device plugins** add support for new technologies such as ThingSpeak, an MQTT broker/client or a mail agent. As with DeviceHive, the graphical front end has to come from a third party.
+- **Environment model:** map of the environment, objects and people within it.
+- **Commands:** natural-language messages (e.g. "turn on the light in the kitchen") processed by a natural-language processor.
+- **Automations:** behaviour rules combined with the language processor, e.g. "If it is dark outside, turn on the light in the room".
+- **Components:** events, plugins, triggers; their interaction is specified in the documentation.
+- **Device plugins:** add support for technologies such as ThingSpeak, MQTT broker/client, mail agent.
+- **GUI:** not included; a third-party front end is required (same as DeviceHive).
 
 ## 3. Demonstration – ThingsBoard
 
-To demonstrate one of the frameworks, several circuits were built that act as sensors and actuators, based on the **ESP32** and **ESP8266** SoCs. All of them talk to a ThingsBoard server on the local network over MQTT (port 1883), each with its own access token.
+Sensor and actuator nodes based on **ESP32** and **ESP8266** SoCs. All nodes connect to a ThingsBoard server on the local network over MQTT (port 1883), each with its own access token.
 
 <p align="center">
   <img src="docs/images/thingsboard-devices.jpg" alt="Devices in the ThingsBoard web UI" width="620"><br>
@@ -177,13 +202,24 @@ To demonstrate one of the frameworks, several circuits were built that act as se
   <em>Figure 11: Wiring and photo of the DHT11 circuit</em>
 </p>
 
-The sensor is a **DHT11** connected to an ESP8266 (data on pin `D7`, with a 4.7 kΩ pull-up). The firmware initializes the DHT11 and a **PubSubClient** for MQTT. Every **1.5 seconds** it reads temperature and humidity and publishes them to the topic `v1/devices/me/telemetry`. Together with the device's access token this forms a unique identification, so all devices publish to the same topic. The payload also includes the dew point and heat index computed by the `DHTesp` library:
+| Parameter | Value |
+|---|---|
+| MCU | ESP8266 |
+| Sensor | DHT11, data on `D7`, 4.7 kΩ pull-up |
+| MQTT client | PubSubClient |
+| Sampling / publish period | 1.5 s |
+| Topic | `v1/devices/me/telemetry` |
+| Status indicator | WS2811 LED module on `D8` |
+
+- Device identity is given by the access token; all devices publish to the same topic.
+- Dew point and heat index are computed by the `DHTesp` library.
+- Payload:
 
 ```json
 {"temperature": <°C>, "dewpoint": <°C>, "heatindex": <°C>, "humidity": <%>}
 ```
 
-A **WS2811** LED module on pin `D8` is used only as a sign that the device is connected to Wi-Fi and the MQTT broker (it cycles through FastLED colour palettes while the main loop runs).
+- The WS2811 LED indicates an active Wi-Fi and MQTT broker connection; it cycles through FastLED colour palettes while the main loop runs.
 
 ### 3.2 Air-conditioning unit
 
@@ -192,7 +228,10 @@ A **WS2811** LED module on pin `D8` is used only as a sign that the device is co
   <em>Figure 12: Wiring and photo of the A/C unit. Labels: <b>Relé 4-kanály</b> = 4-channel relay, <b>Větrák</b> = fan (12 V), <b>LED červená „výhřev“</b> = red LED "heating", <b>LED modrá „chlazení“</b> = blue LED "cooling".</em>
 </p>
 
-This demonstrates an actuator using an **ESP32** and a **4-channel relay** module. The firmware consists mainly of a callback for the subscribed MQTT topics: it registers the RPC method `setGpioStatus` with parameters `pin` (0–3) and `enabled`, and switches the corresponding relay output. The demo can't actually cool or heat; that is simulated by red and blue LED lighting of the fan.
+Actuator node: **ESP32** with a **4-channel relay** module.
+
+- Firmware core: callback for the subscribed MQTT topics, registering RPC method `setGpioStatus` with parameters `pin` (0–3) and `enabled`; switches the corresponding relay output.
+- Cooling and heating are simulated by red and blue LED illumination of the fan; no real thermal function.
 
 | RPC `pin` | ESP32 GPIO (code) | Dashboard label |
 |---|---|---|
@@ -201,7 +240,7 @@ This demonstrates an actuator using an **ESP32** and a **4-channel relay** modul
 | 2 | 33 | Heating |
 | 3 | 32 | Fan |
 
-> **Note:** The schematic wires GPIO 26 → IN1 and GPIO 25 → IN2, with the red "heating" LED on relay 2 and the blue "cooling" LED on relay 3. Following the code (`relay_control[] = {25, 26, 33, 32}`), RPC pin 0 ("Cooling") would therefore switch relay 2, the red LED. Either the schematic or the dashboard labels have heating and cooling swapped. The dashboard's GPIO widget also queries `getGpioStatus`, which the firmware doesn't implement.
+> **Note:** The schematic wires GPIO 26 → IN1 and GPIO 25 → IN2, with the red "heating" LED on relay 2 and the blue "cooling" LED on relay 3. With the code mapping (`relay_control[] = {25, 26, 33, 32}`), RPC pin 0 ("Cooling") switches relay 2, i.e. the red LED. Heating and cooling are therefore swapped either in the schematic or in the dashboard labels. The dashboard GPIO widget also queries `getGpioStatus`, which the firmware does not implement.
 
 ### 3.3 LED light/matrix
 
@@ -210,9 +249,19 @@ This demonstrates an actuator using an **ESP32** and a **4-channel relay** modul
   <em>Figure 13: Wiring and photo of the LED matrix (<b>pásek-matice</b> = strip/matrix)</em>
 </p>
 
-This demonstrates controlling an LED strip of WS2811 modules (the PDF says "WS8211"; the code uses `WS2811`), here arranged as a **5 × 5 matrix** (25 LEDs) on pin `D8`. It uses the simple [ThingsBoard Arduino SDK](https://github.com/thingsboard/ThingsBoard-Arduino-MQTT-SDK) wrapper over PubSubClient. The LEDs are driven by the **FastLED** library.
+| Parameter | Value |
+|---|---|
+| MCU | ESP8266 |
+| LEDs | WS2811 strip, 5 × 5 matrix (25 LEDs) on `D8` (PDF: "WS8211"; code: `WS2811`) |
+| MQTT layer | [ThingsBoard Arduino SDK](https://github.com/thingsboard/ThingsBoard-Arduino-MQTT-SDK) (wrapper over PubSubClient) |
+| LED driver | FastLED |
+| RPC methods | `setValue` (set program), `getValue` (return current program) |
 
-Turning the knob widget on the dashboard to select a program sends its number (0–3) to the `setValue` RPC callback in the ESP8266 firmware. The firmware stores it in a global variable and uses it as an index into FastLED's built-in colour palettes:
+Control flow:
+
+1. The dashboard knob widget sends the selected program number (0–3) via RPC `setValue`.
+2. The firmware stores the value in a global variable.
+3. The value indexes a built-in FastLED colour palette:
 
 | Program | Palette |
 |---|---|
@@ -221,7 +270,7 @@ Turning the knob widget on the dashboard to select a program sends its number (0
 | 2 | `LavaColors_p` |
 | 3 | `RainbowColors_p` |
 
-A `getValue` RPC returns the current program so the knob shows the right position.
+4. `getValue` returns the current program so the knob displays the correct position.
 
 ### 3.4 Control panel
 
@@ -230,28 +279,38 @@ A `getValue` RPC returns the current program so the knob shows the right positio
   <em>Figure 14: Raspberry Pi with a touchscreen</em>
 </p>
 
-A **Raspberry Pi** with a touchscreen is used to control and demonstrate the individual dashboard elements. It also has enough computing power to run the **IoT gateway** for collecting data with third-party technologies and tools, but that part was not implemented. The operating system is a version of **Raspbian Stretch** adapted for the touchscreen. Each dashboard element can be enlarged from the web interface.
+- Hardware: **Raspberry Pi** with touchscreen, used to operate and display dashboard elements; each element can be enlarged from the web interface.
+- OS: **Raspbian Stretch**, touchscreen-adapted build.
+- The Raspberry Pi has sufficient compute to run the **IoT gateway** for third-party data collection; not implemented.
 
 <p align="center">
   <img src="docs/images/final-dashboard.jpg" alt="Final ThingsBoard dashboard" width="720"><br>
   <em>Figure 15: Final dashboard</em>
 </p>
 
-The dashboard (exported as [`sin_dashboard.json`](src/sin_dashboard.json)) contains a radial temperature gauge, a humidity bar gauge, a humidity/temperature chart, the "A/C unit control" GPIO switch panel and the "LED matrix program" knob.
+Dashboard ([`sin_dashboard.json`](src/sin_dashboard.json)) widgets:
+
+- radial temperature gauge,
+- humidity bar gauge,
+- humidity/temperature chart,
+- "A/C unit control" GPIO switch panel,
+- "LED matrix program" knob.
 
 ## 4. Conclusion
 
-The work didn't deviate much from the abstract. The one change was the host of the ThingsBoard application: it was originally meant to run on the Raspberry Pi, but in the end it runs on a Windows machine.
-
-The demo works. The survey would need a revision, but it covers interesting representatives: a framework with middleware in the form of an information system and graphical programming (ThingsBoard), a pure IoT framework (DeviceHive), and a framework with natural-language processing (Freedomotic).
-
-There is no INSTALL script, because many steps have to be done in the graphical interface and the ESP firmware setup is not fully automated. The [`RUN.bat`](RUN.bat) script starts the ThingsBoard service on Windows. There is no COMPILE script either, since compiling is only needed for the ESP firmware.
+- Demonstration is functional.
+- Deviation from the original specification: ThingsBoard runs on a Windows host instead of the Raspberry Pi.
+- Survey coverage: one framework with an information-system middleware and graphical programming (ThingsBoard), one pure IoT framework (DeviceHive), one framework with natural-language processing (Freedomotic). The survey requires revision.
+- No INSTALL script: several steps require the graphical interface and ESP firmware setup is not fully automated.
+- No COMPILE script: compilation applies only to the ESP firmware.
+- [`RUN.bat`](RUN.bat) starts the ThingsBoard service on Windows.
+- Known issues: heating/cooling mapping inconsistency and missing `getGpioStatus` (see [3.2](#32-air-conditioning-unit)); IoT gateway not implemented.
 
 ### Running the demo
 
 1. Install ThingsBoard (with PostgreSQL) and start it with `RUN.bat` (`net start thingsboard`).
 2. Create the three devices in ThingsBoard and import [`src/sin_dashboard.json`](src/sin_dashboard.json).
-3. In each sketch, set the Wi-Fi credentials, the ThingsBoard server address and the device's access token:
+3. In each sketch, set the Wi-Fi credentials, the ThingsBoard server address and the device access token:
    ```cpp
    #define WIFI_AP_NAME        "<your-ssid>"
    #define WIFI_PASSWORD       "<your-wifi-password>"

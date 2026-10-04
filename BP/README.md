@@ -1,9 +1,9 @@
 # Vehicle for Small and Remote Space Mapping
 
 **Bachelor's thesis** · Brno University of Technology, Faculty of Information Technology, Department of Computer Systems · 2018
-**Author:** Pavel Koupý · **Supervisor:** Ing. Vítězslav Beran, Ph.D.
+**Author:** Pavel Koupý
 
-> English adaptation of the original Czech thesis ([`dokumentace.pdf`](dokumentace.pdf)). The text is translated and lightly condensed. The formal parts (declaration, acknowledgements) are left out.
+> English adaptation of the original Czech thesis ([`dokumentace.pdf`](dokumentace.pdf)). The text is translated and condensed. Formal parts (declaration, acknowledgements) are omitted.
 
 <p align="center">
   <img src="docs/images/final-build.jpg" alt="Final build of the vehicle" width="420">
@@ -11,7 +11,7 @@
 
 ## Abstract
 
-This project covers building a robotic vehicle for remote mapping of small indoor spaces. It includes the mechanical design, the choice and wiring of the electronics, and an operator interface for remote control, live camera streaming and autonomous exploration of a room.
+A robotic vehicle for remote mapping of small indoor spaces. Scope: mechanical design, selection and wiring of electronics, and an operator interface for remote control, live camera streaming and autonomous room exploration.
 
 **Keywords:** autonomous vehicle, robotics, Arduino, Raspberry Pi, ROS, localization and mapping (SLAM), remote control
 
@@ -33,24 +33,33 @@ This project covers building a robotic vehicle for remote mapping of small indoo
 
 ## 1. Introduction
 
-Autonomous vehicles and robots draw on more than software. The mechanical build and the circuit design matter just as much, and a programmer working on a PC rarely sees those parts. Many kits and ready-made solutions exist, but this project set out to do the whole thing: from 3D-printing the wheels and chassis to writing the user interface and the rest of the software.
+Objective: a **low-cost, general-purpose platform**, built end to end (3D-printed wheels and chassis through user interface and software), carrying a computer that runs:
 
-The goal was a **low-cost, general-purpose platform** that carries a computer able to run:
-
-- localization and mapping of the vehicle in space,
+- localization and mapping of the vehicle,
 - drive control,
 - a camera stream for remote operation,
-- and other tools and sensors.
+- additional tools and sensors.
 
-The vehicle should be able to explore indoor spaces on its own, while an operator can start autonomous exploration or drive it remotely using the camera and sensors. The main sensor is a **single camera**, together with cheap extras: an **ultrasonic distance sensor** and a **touch (wire) bumper**. The vehicle has four **Mecanum wheels**, so it can build a map of its surroundings and localize itself in it, even in tight spaces.
+Operating modes:
 
-The work was split into three parts:
+- **Autonomous exploration** of indoor spaces, started by the operator.
+- **Remote driving** by the operator via camera and sensor feedback.
 
-- building the vehicle,
-- choosing the electronics and designing the circuits,
-- implementing the required functionality as **ROS nodes**.
+Sensors and drive:
 
-Experiments were run in a room at home, with fake walls and cardboard-box obstacles of various sizes, to test the ultrasonic and touch sensors. The tests are mostly subjective: does each component work as expected? They covered:
+| Item | Description |
+|---|---|
+| Primary sensor | Single (monocular) camera |
+| Auxiliary sensors | Ultrasonic distance sensor, touch (wire) bumper |
+| Drive | Four **Mecanum wheels** (omnidirectional motion in confined spaces) |
+
+Work packages:
+
+1. Vehicle construction.
+2. Electronics selection and circuit design.
+3. Functionality implemented as **ROS nodes**.
+
+Experiments were conducted in an indoor room with artificial walls and cardboard-box obstacles of various sizes (for the ultrasonic and touch sensors). Evaluation was qualitative (pass/fail of expected component behavior) and covered:
 
 - autonomous mode,
 - simultaneous localization and mapping (SLAM),
@@ -62,59 +71,66 @@ A demo video of the experiments was submitted with the thesis.
 
 ### 2.1 Existing vehicles and platforms
 
-Commercial robots fall roughly into three groups:
+Commercial robots fall into three groups:
 
-1. **Specialized service platforms**, e.g. [Fetch Robotics](https://fetchrobotics.com/) warehouse robots.
-2. **Tele-operation platforms**, e.g. [Sanbot](http://www.sanbot.com/) and [PR2](http://www.willowgarage.com/pages/pr2/overview). Most of these offer both automated tasks and remote control or "virtual presence", and they usually rely on SLAM to plan paths through unknown spaces.
-3. **Kits for kids and hobbyists**, e.g. [DRC mark 1](https://www.robotshop.com/letsmakerobots/daddys-robot-car-drc-mark-1) (three wheels, differential front drive), [J-bot office](https://www.jameco.com/jameco/workshop/JamecoBuilds/jbotrobot.html) (four driven wheels) and the [KUKA youBot](http://www.youbot-store.com/), a mobile manipulator on **Mecanum wheels**.
+| Group | Examples | Notes |
+|---|---|---|
+| Specialized service platforms | [Fetch Robotics](https://fetchrobotics.com/) warehouse robots | Expensive, task-specific. |
+| Tele-operation platforms | [Sanbot](http://www.sanbot.com/), [PR2](http://www.willowgarage.com/pages/pr2/overview) | Automated tasks plus remote control / "virtual presence"; typically SLAM-based path planning in unknown spaces. |
+| Kits for kids and hobbyists | [DRC mark 1](https://www.robotshop.com/letsmakerobots/daddys-robot-car-drc-mark-1) (three wheels, differential front drive), [J-bot office](https://www.jameco.com/jameco/workshop/JamecoBuilds/jbotrobot.html) (four driven wheels), [KUKA youBot](http://www.youbot-store.com/) (mobile manipulator on **Mecanum wheels**) | Quality strongly price-dependent. |
 
-The first two groups are expensive and specialized, and the quality of the third depends heavily on price. The aim was to combine ideas from all three into something cheap and easy to extend.
+Design target: combine elements of all three groups into a low-cost, extensible platform.
 
-**Mecanum wheels** are common in warehouses and other places with no room to maneuver. The vehicle can move in any direction without turning its body, and it can rotate on the spot, which suits small, hard-to-reach spaces very well. No custom design was needed in the end: a freely available printable kit on [Thingiverse](https://www.thingiverse.com/thing:1358552) fit the bill.
+**Mecanum wheels** allow translation in any direction without changing body heading, and rotation in place; they are common in warehouses and other confined areas. A freely available printable kit from [Thingiverse](https://www.thingiverse.com/thing:1358552) is used; no custom wheel design was required.
 
 ### 2.2 Construction
 
-- The plastic parts are printed in **PLA** (melting point about 215 °C) at **0.20 mm** layer height. Parts that don't need a smooth surface are printed at **0.35 mm**, which cuts print time a lot.
-- The models come from Thingiverse under **CC BY-SA 3.0** and were used unmodified.
-- A simpler **prototype** was built first to test the electronics, and some of its printed parts were reused in the final version.
+- Plastic parts: **PLA** (melting point approx. 215 °C), **0.20 mm** layer height; **0.35 mm** for parts without surface-finish requirements (reduced print time).
+- Models: Thingiverse, **CC BY-SA 3.0**, used unmodified.
+- A simplified **prototype** was built first for electronics testing; some of its printed parts are reused in the final build.
 
 <p align="center">
   <img src="docs/images/prototype.jpg" alt="Prototype" width="480"><br>
   <em>Figure 3: Prototype</em>
 </p>
 
-The final chassis is a **four-motor differential drive** using [Pololu micro metal gearmotors](https://www.pololu.com/file/0J1487/pololu-micro-metal-gearmotors.pdf) with a **1:100** metal gearbox, rated for **9 V**.
-
-Each wheel is a load-bearing frame with **nine rollers**, held on by metal pins. Every roller is wrapped in heat-shrink tubing for better traction. The wheels and motors are attached to the chassis with two screws and a plastic clamp.
+| Parameter | Value |
+|---|---|
+| Drive configuration | **Four-motor differential drive** |
+| Motors | [Pololu micro metal gearmotors](https://www.pololu.com/file/0J1487/pololu-micro-metal-gearmotors.pdf), **1:100** metal gearbox, rated **9 V** |
+| Wheel | Load-bearing frame, **nine rollers** on metal pins, each roller wrapped in heat-shrink tubing (traction) |
+| Wheel/motor mounting | Two screws + plastic clamp per unit |
+| Frame | Chassis plates, computer case and battery holder joined with **standoffs** of various lengths (extensible for further sensors/actuators) |
+| Maximum slope | **35°** |
 
 <p align="center">
   <img src="docs/images/mecanum-wheels.jpg" alt="Mecanum wheel detail" width="620"><br>
   <em>Figure 4: Wheel detail</em>
 </p>
 
-Because of the Mecanum wheels, steering is different from a normal four-motor differential drive. The figure below shows how each wheel's rotation (red arrows) combines into the vehicle's resulting motion (black arrow).
+Mecanum steering differs from a standard four-motor differential drive. Figure 5: per-wheel rotation (red arrows) and resulting vehicle motion (black arrow).
 
 <p align="center">
   <img src="docs/images/mecanum-drive.png" alt="Mecanum drive directions" width="620"><br>
   <em>Figure 5: Drive and steering</em>
 </p>
 
-The chassis plates, the computer case and the battery holder are joined with **standoffs** of various lengths, so the base frame is easy to extend with more sensors or actuators. The downside: with that much electronics and the batteries mounted fairly high, the **center of gravity is high**. The vehicle can handle a slope of at most **35°**.
+Known issue: electronics and batteries are mounted high, resulting in a **high center of gravity**.
 
 ### 2.3 Electronics
 
-Components were chosen for ease of use, price, available libraries and local availability.
+Selection criteria: ease of use, price, library support, local availability.
 
-| Role | Component | Why |
+| Role | Component | Rationale |
 |---|---|---|
-| Main computer | **Raspberry Pi 3** | Runs ROS and SLAM on board, with no other computer needed. Built-in Wi-Fi is used for the operator link. Part of the point was to find out whether SLAM can run on a single-board ARM computer with limited RAM. |
-| Motor controller | **Arduino UNO** (ATmega328P) + L293D motor shield | Keeps the motors' current spikes, especially when starting up, away from the Pi. Connected to the Pi over **USB serial**, which also powers it from the Pi while debugging. |
-| Camera | Raspberry Pi Camera Module (5 MP, 2592×1944) | Connected directly over the flat ribbon cable. Run at a lower resolution, 640×480, to save CPU and bandwidth. |
-| Distance sensor | **HC-SR04** ultrasonic | Cheap distance measurement. |
+| Main computer | **Raspberry Pi 3** | Runs ROS and SLAM on board without an external computer. Built-in Wi-Fi used for the operator link. Serves as a test of SLAM feasibility on a single-board ARM computer with limited RAM. |
+| Motor controller | **Arduino UNO** (ATmega328P) + L293D motor shield | Isolates motor current spikes (notably at start-up) from the Pi. Connected to the Pi over **USB serial**, which also powers it from the Pi during debugging. |
+| Camera | Raspberry Pi Camera Module (5 MP, 2592×1944) | Connected via ribbon cable. Operated at 640×480 to reduce CPU load and bandwidth. |
+| Distance sensor | **HC-SR04** ultrasonic | Low-cost distance measurement. |
 | Touch sensor | Wire bumper | Collision detection. |
-| Power | 6× AAA NiMH (7.2 V) + **LM2596** step-down regulator | Converts the battery voltage to 5 V for the Pi. |
+| Power | 6× AAA NiMH (7.2 V) + **LM2596** step-down regulator | Converts battery voltage to 5 V for the Pi. |
 
-An FPGA with a microprocessor was also considered, but an off-the-shelf ARM board is much easier to work with.
+Rejected alternative: FPGA with a microprocessor (higher development effort than an off-the-shelf ARM board).
 
 <p align="center">
   <img src="docs/images/wiring-diagram.png" alt="Wiring diagram" width="620"><br>
@@ -123,23 +139,38 @@ An FPGA with a microprocessor was also considered, but an off-the-shelf ARM boar
 
 #### Motor driver
 
-The motors are driven by an Arduino **shield** with two **L293D** chips (each one is four half H-bridges, i.e. two full H-bridges) and a **74HC595N** shift register. Each L293D drives a pair of motors using **PWM**. The 74HC595N converts serial data from the Arduino into parallel outputs that set each motor's direction (signals M1A/B … M4A/B). The PWM duty cycle on PWM2A/PWM2B sets the motor speed, i.e. the average voltage at the motor terminals.
+Arduino **shield** components:
+
+- 2× **L293D** (four half H-bridges each, i.e. two full H-bridges); each drives one motor pair via **PWM**.
+- 1× **74HC595N** shift register: serial-to-parallel conversion of direction signals M1A/B … M4A/B.
+- PWM duty cycle on PWM2A/PWM2B sets motor speed (average voltage at the motor terminals).
+- Diodes D1–D8: protection against motor voltage spikes.
+- Capacitor C1: smoothing of the 5 V reference.
+- VCC1 = V+ (5 V), since the board is USB-powered.
 
 <p align="center">
   <img src="docs/images/motor-driver-schematic.png" alt="DC motor driver schematic" width="620"><br>
   <em>Figure 8: DC motor wiring (front motors)</em>
 </p>
 
-Diodes D1–D8 protect the electronics from voltage spikes from the motors. Capacitor C1 smooths the 5 V reference. VCC1 equals V+ (5 V) because the board is powered over USB.
-
 #### Power
 
-An **LM2596** step-down regulator (input up to 46 V, output adjustable in 0.1 V steps, up to 3 A) converts the **7.2 V** from six AAA NiMH cells to **5 V** for the Pi. The Pi documentation recommends a 2.5 A supply, so 3 A leaves some headroom. The module also has short-circuit, overheating and reverse-polarity protection.
+| Parameter | Value |
+|---|---|
+| Source | 6× AAA NiMH, **7.2 V** |
+| Regulator | **LM2596** step-down |
+| Regulator input | up to 46 V |
+| Regulator output | **5 V** (adjustable in 0.1 V steps), up to 3 A |
+| Pi recommended supply | 2.5 A (3 A available → headroom) |
+| Protection | short circuit, overtemperature, reverse polarity |
 
 #### Sensors
 
-- **Touch bumper**: 3.3 V is fed into the bumper wire, and the standoffs are wired to a Pi GPIO input. When the wire touches a standoff, the pin reads logic 1.
-- **Ultrasonic sensor HC-SR04**: it uses 5 V logic, but the Pi's GPIO is 3.3 V. **Trigger** is an input to the sensor, so it can be driven directly from a 3.3 V pin. **Echo** is a 5 V TTL output and goes through a **BSS138 MOSFET logic-level shifter** (LV = 3.3 V, HV = 5 V). Trigger is on physical pin **16** and Echo on physical pin **18**. The software uses the [WiringPi](http://wiringpi.com/) library.
+- **Touch bumper:** 3.3 V applied to the bumper wire; standoffs wired to a Pi GPIO input. Contact between wire and standoff → logic 1.
+- **Ultrasonic sensor HC-SR04:** 5 V logic vs. 3.3 V Pi GPIO.
+  - **Trigger** (sensor input): driven directly from a 3.3 V pin, physical pin **16**.
+  - **Echo** (5 V TTL output): via **BSS138 MOSFET logic-level shifter** (LV = 3.3 V, HV = 5 V), physical pin **18**.
+  - Software access: [WiringPi](http://wiringpi.com/).
 
 <p align="center">
   <img src="docs/images/level-shifter.png" alt="BSS138 logic level shifter" width="360"><br>
@@ -148,20 +179,27 @@ An **LM2596** step-down regulator (input up to 46 V, output adjustable in 0.1 V 
 
 ## 3. Software
 
-The vehicle runs on **ROS** ([Robot Operating System](http://www.ros.org/)). ROS makes it easy to split the software into separate parts and to plug in existing tools. The most interesting part is the **autonomous control node**, which oversees all the other running nodes and picks its next action using a **subsumption architecture**.
+The software runs on **ROS** ([Robot Operating System](http://www.ros.org/)), which provides process separation and integration of existing tools. The **autonomous control node** supervises the other nodes and selects actions using a **subsumption architecture** [5].
 
-There were two options for the overall setup:
+Architecture options considered:
 
-1. **Client–server**, as in the ROSberryPi SLAM Robot project [2], with SLAM running on a separate PC.
-2. **Everything on the Raspberry Pi**, controlled remotely over **SSH** from a graphical interface. This was the option chosen, as an experiment: it wasn't clear in advance whether the Pi would have enough computing power.
+1. **Client–server**, as in the ROSberryPi SLAM Robot project [2]: SLAM on a separate PC.
+2. **All processing on the Raspberry Pi**, controlled remotely over **SSH** from a graphical interface. **Selected**, with Pi computing capacity as an open question.
 
-[Rosbridge](http://wiki.ros.org/rosbridge_suite) provides a WebSocket server for talking to ROS without a local ROS install. But controlling the Linux system itself through ROS needs superuser rights, which is risky and can break the system or even corrupt the Pi's SD card. Also, the only other computer available ran Windows, which has no fully working ROS implementation. So the interface was built on **SSH**.
+Rationale for SSH instead of [Rosbridge](http://wiki.ros.org/rosbridge_suite) (WebSocket access to ROS without a local ROS install):
+
+- Controlling the Linux system through ROS requires superuser rights, with a risk of system breakage or SD-card corruption.
+- The available operator computer runs Windows, which has no fully working ROS implementation.
 
 ### 3.1 ROS and the operating system
 
-ROS splits the system into **nodes**: separate processes for the ultrasonic sensor, the touch sensor, autonomous control, SLAM and so on. Nodes communicate over **topics**. A node can **publish** messages to a topic or **subscribe** to one. Messages can be built-in types (strings, numbers, predefined structures) or custom types. Packages usually include **launch files**, which make starting and configuring nodes much less error-prone.
+ROS concepts used:
 
-The nodes are written in **C++** using `roscpp`. **ROSSerial** handles communication with the Arduino.
+- **Nodes:** separate processes (ultrasonic sensor, touch sensor, autonomous control, SLAM, …).
+- **Topics:** nodes **publish** to or **subscribe** to topics; messages are built-in types (strings, numbers, predefined structures) or custom types.
+- **Launch files:** start and configure nodes.
+
+Nodes are written in **C++** (`roscpp`). Arduino communication uses **ROSSerial**.
 
 | Topic | Type | Publisher → Subscriber |
 |---|---|---|
@@ -174,40 +212,51 @@ The nodes are written in **C++** using `roscpp`. **ROSSerial** handles communica
 | `orb_slam` | `Int16` | ORB-SLAM2 (modified mono node) → GUI status |
 | `/camera/image_raw` | `Image` | camera (decompressed) → ORB-SLAM2 |
 
-**Platform:** [ROS Kinetic](http://wiki.ros.org/ROSberryPi/Installing%20ROS%20Kinetic%20on%20the%20Raspberry%20Pi) on **Ubuntu MATE 16.04.4 LTS (32-bit)**. Most ROS tooling is supported there. The Ethernet interface has a static IP for first-time setup of the wireless link, which is then used for remote control.
+**Platform:** [ROS Kinetic](http://wiki.ros.org/ROSberryPi/Installing%20ROS%20Kinetic%20on%20the%20Raspberry%20Pi) on **Ubuntu MATE 16.04.4 LTS (32-bit)**. The Ethernet interface has a static IP for initial configuration of the wireless link; the wireless link is used for remote control.
 
-> **Build tip:** the Pi has only **1 GB of RAM**. Compiling ORB-SLAM2 and its dependencies needed a **2 GB swap file** on the SD card, and the build had to use `-j2` instead of `-j4`.
+> **Build note:** the Pi has **1 GB of RAM**. Compiling ORB-SLAM2 and its dependencies requires a **2 GB swap file** on the SD card and `-j2` instead of `-j4`.
 
 ### 3.2 Drive control and user interface
 
-The **Arduino** runs as a regular **ROS node** through ROSSerial. A state machine inside the node receives commands on the `motors_ctrl` topic and carries them out in a loop with a fixed period. PWM generation and motor control use the [Adafruit Motor Shield library](https://github.com/adafruit/Adafruit-Motor-Shield-library). Only two calls are needed:
+The **Arduino** runs as a **ROS node** via ROSSerial. An internal state machine receives commands on `motors_ctrl` and executes them in a fixed-period loop. PWM generation and motor control use the [Adafruit Motor Shield library](https://github.com/adafruit/Adafruit-Motor-Shield-library):
 
-- `run(direction)` sets a motor's direction, or stops it,
-- `setSpeed(value)` sets the PWM duty cycle, i.e. the speed.
-
-On every `run()` call, the library sends a data word to the shift register on the shield, which drives the direction inputs of the L293D chips.
+| Call | Function |
+|---|---|
+| `run(direction)` | Sets motor direction or stops the motor. Each call sends a data word to the shield shift register, which drives the L293D direction inputs. |
+| `setSpeed(value)` | Sets PWM duty cycle (speed). |
 
 #### 3.2.1 User interface (`PiInterface`)
 
-The remote-control application is a Windows **MFC** application that connects to the vehicle with [libssh](https://www.libssh.org/). It has two screens, switched with a Tab Control. Each screen is its own class, and configuration is loaded by the main dialog and passed to the screens by reference.
+Windows **MFC** application; connects to the vehicle via [libssh](https://www.libssh.org/). Two screens selected by a Tab Control; each screen is a separate class. Configuration is loaded by the main dialog and passed to the screens by reference.
 
-**Motion control (`MotionControlTab`)**: set motor speeds, interact with autonomous mode, read sensor data and watch the camera. You can drive with on-screen buttons, which latch so you don't have to hold them down, or with a **joystick**, read through **Raw Input** HID events.
+**Motion control (`MotionControlTab`):** motor speed setting, autonomous-mode commands, sensor readout, camera view. Driving input: latching on-screen buttons, or a **joystick** read via **Raw Input** HID events.
 
 <p align="center">
   <img src="docs/images/ui-motion-control.png" alt="Remote-control user interface" width="720"><br>
   <em>Figure 11: Remote-control interface</em>
 </p>
 
-Two background threads, each with its own SSH channel and shell, keep this screen running:
+Background threads (each with its own SSH channel and shell):
 
-- `WatchStatusRun()` starts a ROS node that prints `ult_sensor`, `whiskers_sensor`, `automode_status` and `orb_slam` to stdout. The UI reads and parses that output from the SSH channel. This is the ROS → UI bridge.
-- `ControlUpdate()` writes commands to the shell. A ROS node reads them from stdin and forwards them to the right topics. This is the UI → ROS bridge.
+| Thread | Direction | Function |
+|---|---|---|
+| `WatchStatusRun()` | ROS → UI | Starts a ROS node that prints `ult_sensor`, `whiskers_sensor`, `automode_status` and `orb_slam` to stdout; the UI parses this output from the SSH channel. |
+| `ControlUpdate()` | UI → ROS | Writes commands to the shell; a ROS node reads them from stdin and forwards them to the corresponding topics. |
 
-Both threads are started from the UI and controlled through atomic flags. The driving direction is an atomic global variable. There's no mutex, because exactly one thread writes it and one thread reads it.
+Synchronization: threads are started from the UI and controlled through atomic flags. The driving direction is an atomic global variable; no mutex is used (single writer, single reader).
 
-**Video** is received with [libVLC](https://www.videolan.org/vlc/libvlc.html) through a small C++ [wrapper](https://www.codeproject.com/Articles/38952/VLCWrapper-A-Little-C-wrapper-Around-libvlc). The Pi streams **MJPEG**, a format designed for CCTV, through **UV4L**, which runs a web server on port **8080** where you can also set resolution, rotation and format. UV4L can do OpenCV face detection too, but it noticeably slows the stream down. When SLAM is started, the stream is killed, because ORB-SLAM2 captures the camera through a different tool and the two would collide. ORB-SLAM2 also needs **raw**, uncompressed frames, which would be far too much for the Pi's Wi-Fi, since it also carries all the control traffic.
+**Video:**
 
-**System control (`SystemControlTab`)**: starts ROS nodes and manages the whole OS. There's a simple **console** that shows command output and accepts custom commands. The commands behind the buttons are defined in an **INI file**, read at startup with [inih](https://github.com/jtilly/inih), so changes need an application restart. From here you can shut down or reboot the vehicle, check system parameters and network settings, and start a **remote-desktop server**. Remote desktop is currently the only way to watch the SLAM output, because the 3D map isn't streamed into the application.
+- Client: [libVLC](https://www.videolan.org/vlc/libvlc.html) via a C++ [wrapper](https://www.codeproject.com/Articles/38952/VLCWrapper-A-Little-C-wrapper-Around-libvlc).
+- Server: **UV4L** streams **MJPEG** (a CCTV-oriented format); web server on port **8080** for resolution, rotation and format settings. UV4L OpenCV face detection is available but reduces stream throughput noticeably.
+- On SLAM start the stream is terminated: ORB-SLAM2 captures the camera through a different tool (device conflict) and requires **raw** uncompressed frames, whose bandwidth exceeds the Pi Wi-Fi capacity alongside control traffic.
+
+**System control (`SystemControlTab`):** starts ROS nodes and manages the OS.
+
+- **Console:** displays command output, accepts custom commands.
+- Button commands are defined in an **INI file**, parsed at startup with [inih](https://github.com/jtilly/inih); changes require an application restart.
+- Functions: shutdown/reboot, system parameters, network settings, **remote-desktop server** start.
+- Remote desktop is the only way to view SLAM output; the 3D map is not streamed into the application.
 
 <p align="center">
   <img src="docs/images/ui-system-control.png" alt="System control screen" width="720"><br>
@@ -216,7 +265,9 @@ Both threads are started from the UI and controlled through atomic flags. The dr
 
 #### 3.2.2 System test
 
-All ROS nodes were started from the UI while CPU temperature, load and memory were monitored:
+- **Setup:** all ROS nodes started from the UI.
+- **Procedure:** CPU temperature, frequency, load and memory monitored at idle and under full load.
+- **Result:**
 
 | Metric | Idle | Everything running |
 |---|---|---|
@@ -225,19 +276,28 @@ All ROS nodes were started from the UI while CPU temperature, load and memory we
 | CPU load | ~5 % | ~85 % |
 | Memory used (no swap) | 200 MB | 750 MB |
 
-The Raspberry Pi **is powerful enough**, but only just. It needs a **fan and passive heatsinks**.
+- **Observed issues:** performance margin is small; a **fan and passive heatsinks** are required.
 
 #### 3.2.3 Manual control test
 
-The vehicle was driven around the test area using only the camera and the UI, with no direct view of it, starting just the sensor nodes and the Arduino serial node. The interface worked well. It offers everything a plain terminal does, plus preset commands and simple driving controls.
+- **Setup:** sensor nodes and Arduino serial node only.
+- **Procedure:** vehicle driven through the test area using camera and UI only, without direct line of sight.
+- **Result:** passed. The interface provides full terminal functionality plus preset commands and driving controls.
+- **Observed issues:** none recorded.
 
 ### 3.3 Autonomous control
 
 #### 3.3.1 Subsumption architecture
 
-The classic approach to robot autonomy is a pipeline of functional stages: sensing → mapping → planning → action. Each stage only sees the previous stage's output, so errors build up along the chain.
+Classic robot control is a pipeline of functional stages (sensing → mapping → planning → action); each stage consumes only the previous stage's output, so errors accumulate along the chain.
 
-The **subsumption architecture** proposed by Rodney Brooks [5] takes the opposite approach. Behavior is split into **layers**, each pursuing one goal (avoid an obstacle, wander around) and reacting directly to the environment. These are **reactive agents**: they don't build a symbolic model of the world, and there's no central planner. Every layer can issue motion commands. Higher layers do more complex things, such as exploring and wandering, and normally suppress the lower ones. Lower, more primitive layers, such as collision handling, take over when something urgent happens. The result is surprisingly complex behavior that can run for a long time without an operator.
+The **subsumption architecture** [5] decomposes behavior into **layers**:
+
+- Each layer pursues one goal (e.g. avoid obstacle, wander) and reacts directly to the environment.
+- Layers are **reactive agents**: no symbolic world model, no central planner.
+- Every layer can issue motion commands.
+- Higher layers (exploration, wandering) normally suppress lower ones; lower, primitive layers (collision handling) take over on urgent events.
+- Result: complex emergent behavior capable of long-running operation without an operator.
 
 ```mermaid
 flowchart LR
@@ -252,20 +312,20 @@ flowchart LR
 ```
 <p align="center"><em>Figure 13: Example reactive-agent architecture (S = suppression node)</em></p>
 
-Each layer is usually a **finite state machine** that reacts to sensor input. Formally, a reactive agent is the six-tuple **{P, A, I, see, next, action}**:
+Each layer is typically a **finite state machine** driven by sensor input. A reactive agent is formally the six-tuple **{P, A, I, see, next, action}**:
 
-- `see : E → P`: the agent perceives part of the environment state *E* as a percept *P*,
-- `next : P × I → I`: the percept and the current internal state give a new internal state,
-- `action : P × I → A`: the percept and the state select an action,
+- `see : E → P`: maps part of the environment state *E* to a percept *P*,
+- `next : P × I → I`: percept and current internal state yield a new internal state,
+- `action : P × I → A`: percept and state select an action,
 - `env : A × E → E`: the action changes the environment.
 
-A **purely reactive** agent keeps no internal state, which reduces this to {P, A, see, action}. The implementation follows this model loosely, adapted to fit ROS.
+A **purely reactive** agent has no internal state: {P, A, see, action}. The implementation follows this model loosely, adapted to ROS.
 
 #### 3.3.2 Sensors
 
-Autonomous mode uses the **wire bumper** and the **ultrasonic sensor**, each with its own ROS node, both connected over GPIO and read with WiringPi (physical pin numbering).
+Autonomous mode uses the **wire bumper** and the **ultrasonic sensor**, each in its own ROS node, both on GPIO, read via WiringPi (physical pin numbering).
 
-The speed of sound in dry air at 25 °C is about **346.1 m/s** (rounded to 346 m/s). The node measures the time *t* between the Trigger pulse and the falling edge of Echo, to microsecond precision:
+Distance computation: speed of sound in dry air at 25 °C ≈ **346.1 m/s** (rounded to 346 m/s); *t* = time between the Trigger pulse and the falling edge of Echo, measured with microsecond resolution.
 
 ```
 distance = t × 346 m/s / 2
@@ -278,7 +338,12 @@ distance = t × 346 m/s / 2
 
 #### 3.3.3 Implementation
 
-Autonomous mode is a separate ROS node ([`auto_mode.cpp`](src/pi_rover/src/auto_mode.cpp)) containing **three state machines**. Each one is a function called from the main ROS loop, with global variables as its inputs and global flags that **inhibit** its outputs. The node needs the sensor nodes and the motor node to be running. It also accepts simple commands on `automode_ctrl`, so you can switch between autonomous and manual driving.
+Autonomous mode is a separate ROS node ([`auto_mode.cpp`](src/pi_rover/src/auto_mode.cpp)) with **three state machines**:
+
+- Each machine is a function called from the main ROS loop.
+- Inputs: global variables. Outputs: gated by global **inhibit** flags.
+- Dependencies: sensor nodes and motor node must be running.
+- Control: commands on `automode_ctrl` switch between autonomous and manual driving.
 
 **Level 1: collision handling** (wire bumper)
 
@@ -287,16 +352,29 @@ Autonomous mode is a separate ROS node ([`auto_mode.cpp`](src/pi_rover/src/auto_
   <em>Figure 15: Level 1 state transitions</em>
 </p>
 
-`HCS_INIT` → `HCS_COL_CHECK` checks `last_touch`. On a collision the machine goes to `HCS_BACK` and backs up a few steps, then to `HCS_COL_SOLVE`: the vehicle **rotates 270°** and takes a distance reading at every third of the turn. In `HCS_COL_CHOOSER` it picks the **largest distance** and works out how many steps it needs to face that way (`HCS_COL_REVIVE`, shown as `HCS_REVIVE` in the diagram). If the last reading was already the largest, it's facing the right way and goes back to `HCS_COL_CHECK`.
+| State | Action |
+|---|---|
+| `HCS_INIT` | → `HCS_COL_CHECK` |
+| `HCS_COL_CHECK` | Checks `last_touch`; on collision → `HCS_BACK`. |
+| `HCS_BACK` | Reverses a few steps → `HCS_COL_SOLVE`. |
+| `HCS_COL_SOLVE` | **Rotates 270°**, distance reading at every third of the turn. |
+| `HCS_COL_CHOOSER` | Selects the **largest distance** and computes the steps required to face it. If the last reading is the largest, heading is already correct → `HCS_COL_CHECK`. |
+| `HCS_COL_REVIVE` | Rotates to the selected heading. Labelled `HCS_REVIVE` in the diagram. |
 
-**Level 2: following walls** (ultrasonic)
+**Level 2: wall following** (ultrasonic)
 
 <p align="center">
   <img src="docs/images/fsm-level2-wall.png" alt="Level 2 state machine" width="420"><br>
   <em>Figure 16: Level 2 state transitions</em>
 </p>
 
-`WWS_INIT` → `WWS_CHECK_DISTANCE`. If the distance to an obstacle drops **below 10 cm**, the machine goes to `WWS_OBJECT_ALIGNPP` and turns until the distance is **at least 15 cm**, then goes back to checking. Simple as it is, this is the **most used** layer and avoids most collisions. The other two mostly handle edge cases.
+| State | Action |
+|---|---|
+| `WWS_INIT` | → `WWS_CHECK_DISTANCE` |
+| `WWS_CHECK_DISTANCE` | Distance **< 10 cm** → `WWS_OBJECT_ALIGNPP`. |
+| `WWS_OBJECT_ALIGNPP` | Rotates until distance **≥ 15 cm** → `WWS_CHECK_DISTANCE`. |
+
+Level 2 is the **most frequently active** layer and prevents most collisions; levels 1 and 3 mainly handle edge cases.
 
 **Level 3: random wandering**
 
@@ -305,57 +383,83 @@ Autonomous mode is a separate ROS node ([`auto_mode.cpp`](src/pi_rover/src/auto_
   <em>Figure 17: Level 3 state transitions</em>
 </p>
 
-`RWS_INIT` → `RWS_CHECK_STEPS` counts forward steps. Above a threshold of **200 steps**, `RWS_ROTATE` spins the vehicle and measures the distance at **four random headings**. `RWS_CHOOSER` picks the longest, and `RWS_REVIVE` steers that way if a correction is needed. Otherwise the vehicle keeps going straight.
+| State | Action |
+|---|---|
+| `RWS_INIT` | → `RWS_CHECK_STEPS` |
+| `RWS_CHECK_STEPS` | Counts forward steps; above **200 steps** → `RWS_ROTATE`; otherwise continues straight. |
+| `RWS_ROTATE` | Rotates and measures distance at **four random headings**. |
+| `RWS_CHOOSER` | Selects the longest distance. |
+| `RWS_REVIVE` | Steers to the selected heading if a correction is required. |
 
-**How the layers interact:** while level 1 is handling a collision, the higher levels are paused until it reports the collision resolved. Priority between levels 2 and 3 depends on the step history: after too long driving straight, a 360° distance scan starts. In the main loop, the default command is "step forward". The direction variable is then **filtered through the three machines in sequence**, and the result is sent to the Arduino's control state machine. Switching to manual mode turns off all autonomous layers, and sensor data then goes only to the UI.
+**Layer interaction:**
+
+1. Default command in the main loop: "step forward".
+2. The direction variable is **filtered through the three machines in sequence**; the result is sent to the Arduino control state machine.
+3. While level 1 handles a collision, higher levels are paused until it reports the collision resolved.
+4. Priority between levels 2 and 3 depends on step history: after prolonged straight driving, a 360° distance scan starts.
+5. Manual mode disables all autonomous layers; sensor data is routed to the UI only.
 
 #### 3.3.4 Testing
 
-The vehicle was placed at a random position, with SLAM off, to see whether it could explore the room sensibly without getting stuck in one spot or a dead end. The result was **fairly positive**. The vehicle drove through the space with purpose and wove between obstacles. There were some problems, like getting lost or tipping over, but it did better than expected. The main issue was the **number of steps needed for a full turn**: the wheels aren't perfect, so it varies with the floor surface. An averaged value was used in the end, since precision isn't critical here.
+- **Setup:** vehicle at a random position; SLAM off.
+- **Procedure:** autonomous exploration of the room; criterion: no trapping in one location or dead end.
+- **Result:** passed with exceptions. The vehicle traversed the space and navigated between obstacles.
+- **Observed issues:**
+  - Occasional loss of orientation and tip-over.
+  - **Steps per full rotation** vary with floor surface (wheel imperfections); an averaged value is used, as precision is not critical for this function.
 
 #### 3.3.5 Limitations
 
-- Low obstacles such as **cables** aren't detected by any sensor.
-- There's **no state machine managing mapping and localization**, in particular for initializing SLAM and **recovering when it loses tracking**. Recovering was hard even when driving manually: the vehicle has to be maneuvered back to a spot where it can re-localize. Once a good map has been built manually, localization also works in autonomous mode, and turning in place or backing up a few steps is usually enough.
+- Low obstacles (e.g. **cables**) are not detected by any sensor.
+- **No state machine for mapping and localization**, specifically for SLAM initialization and **recovery after tracking loss**.
+  - Recovery is difficult in manual mode as well: the vehicle must be maneuvered back to a location where re-localization is possible.
+  - With a good manually built map, localization also works in autonomous mode; rotation in place or reversing a few steps is usually sufficient.
 
 ### 3.4 Mapping and localization (ORB-SLAM2)
 
 #### 3.4.1 Navigation
 
-To navigate, whether autonomously or manually, the vehicle needs to know at least roughly where it is, which also means building a map. **SLAM** algorithms solve both together. Most setups use **LIDAR, stereo or RGB-D** cameras, which are expensive, and fusing their data costs a lot of computing power. This project tries to use **a single monocular camera**, so the operator can see the mapped space and follow the vehicle on the map.
+Navigation (autonomous or manual) requires a pose estimate and therefore a map; **SLAM** solves both jointly. Typical setups use **LIDAR, stereo or RGB-D** cameras, which are costly and computationally expensive to fuse. This system uses **a single monocular camera**, allowing the operator to view the mapped space and the vehicle's position in it.
 
 #### 3.4.2 SLAM
 
-The vehicle explores unknown space, builds the map step by step, and estimates its own pose in it [4].
+The vehicle explores unknown space, incrementally builds a map, and estimates its own pose in it [4].
 
 <p align="center">
   <img src="docs/images/slam-problem.png" alt="The SLAM problem" width="480"><br>
   <em>Figure 18: The SLAM problem in general</em>
 </p>
 
-- **x<sub>k</sub>**: the vehicle's position and orientation,
-- **m<sub>i</sub>**: the position of landmark *i* (static),
-- **z<sub>k,i</sub>**: an observation of landmark *m<sub>i</sub>* from pose *x<sub>k</sub>*,
-- **u<sub>k</sub>**: the control vector applied at *x<sub>k−1</sub>* to reach *x<sub>k</sub>*.
+- **x<sub>k</sub>**: vehicle position and orientation,
+- **m<sub>i</sub>**: position of (static) landmark *i*,
+- **z<sub>k,i</sub>**: observation of landmark *m<sub>i</sub>* from pose *x<sub>k</sub>*,
+- **u<sub>k</sub>**: control vector applied at *x<sub>k−1</sub>* to reach *x<sub>k</sub>*.
 
-The estimate is probabilistic (conditional probability densities). Keeping a history of past motions and observations reduces the uncertainty in the vehicle's pose relative to the landmarks. The most common representation is a state-space model with Gaussian noise, which leads to the **Extended Kalman Filter (EKF)**. **FastSLAM** is a popular alternative. With a **monocular** camera, you also have to solve **initialization** and the **depth of landmarks**, which a single image can't give you directly [1], [3].
+Properties:
+
+- Estimation is probabilistic (conditional probability densities); a history of motions and observations reduces pose uncertainty relative to landmarks.
+- Common representation: state-space model with Gaussian noise → **Extended Kalman Filter (EKF)**. Alternative: **FastSLAM**.
+- **Monocular** SLAM additionally requires solving **initialization** and **landmark depth**, which a single image does not provide directly [1], [3].
 
 #### 3.4.3 Implementation
 
-[ORB-SLAM2](https://github.com/raulmur/ORB_SLAM2) [6] needed these to be built and installed first: [Pangolin](https://github.com/stevenlovegrove/Pangolin) (map visualization), [OpenCV](https://opencv.org/), [Eigen3](http://eigen.tuxfamily.org/) and [DBoW2](https://github.com/dorian3d/DBoW2).
+[ORB-SLAM2](https://github.com/raulmur/ORB_SLAM2) [6] build dependencies: [Pangolin](https://github.com/stevenlovegrove/Pangolin) (map visualization), [OpenCV](https://opencv.org/), [Eigen3](http://eigen.tuxfamily.org/), [DBoW2](https://github.com/dorian3d/DBoW2).
 
-Changes made for this project:
+Modifications:
 
-- **Pangolin over X11:** the framebuffer setting in the source had to be changed, or Pangolin crashed when shown on a remote display ([Pangolin#194](https://github.com/stevenlovegrove/Pangolin/issues/194)).
-- **Memory:** the build used swap and `-j2` (see above).
-- **ROS mono example:** the main loop was rewritten to **publish the tracking state** from the `ORB_SLAM2::System` instance on the `orb_slam` topic, so other nodes and the UI can see it ([`ros_mono.cc`](src/ORB_SLAM2/src/ros_mono.cc)).
+- **Pangolin over X11:** framebuffer setting changed in source; otherwise Pangolin crashes on a remote display ([Pangolin#194](https://github.com/stevenlovegrove/Pangolin/issues/194)).
+- **Memory:** swap and `-j2` (see [3.1](#31-ros-and-the-operating-system)).
+- **ROS mono example:** main loop rewritten to **publish the tracking state** of the `ORB_SLAM2::System` instance on `orb_slam` for other nodes and the UI ([`ros_mono.cc`](src/ORB_SLAM2/src/ros_mono.cc)).
 
-ORB-SLAM2 is started with two inputs:
+Inputs:
 
-1. A **camera calibration file** with the **distortion coefficients** and the **camera matrix** (pixels → real-world units), so it can estimate distances and undistort images. The values come from the ROS `camera_calibration` tool, which uses a **chessboard** with a known number and size of squares. They're then copied into the ORB-SLAM2 config.
-2. A **Bag-of-Words vocabulary**: the large, generic vocabulary that ships with ORB-SLAM2, which the authors and the community have tested both indoors and outdoors.
+1. **Camera calibration file:** **distortion coefficients** and **camera matrix** (pixels → real-world units) for distance estimation and undistortion. Values obtained with the ROS `camera_calibration` tool (**chessboard** with known square count and size) and copied into the ORB-SLAM2 config.
+2. **Bag-of-Words vocabulary:** the generic vocabulary shipped with ORB-SLAM2, validated indoors and outdoors by its authors and community.
 
-Camera resolution is **640×480**, a trade-off between CPU load and video streaming. The camera node, `raspicam_node`, publishes **compressed** images, but ORB-SLAM2 only accepts **raw** frames. The ROS `image_transport` tool decompresses them and republishes them on `image_raw`.
+Camera pipeline:
+
+- Resolution **640×480** (trade-off between CPU load and video streaming).
+- `raspicam_node` publishes **compressed** images; ORB-SLAM2 accepts **raw** frames only. ROS `image_transport` decompresses and republishes on `image_raw`.
 
 <p align="center">
   <img src="docs/images/camera-calibration.png" alt="Camera calibration" width="720"><br>
@@ -364,25 +468,38 @@ Camera resolution is **640×480**, a trade-off between CPU load and video stream
 
 #### 3.4.4 Testing
 
-The vehicle was placed at a random position, and all nodes were started from the UI: ORB-SLAM2, the sensors including the camera, and the Arduino serial node.
+**Setup (all tests):** vehicle at a random position; ORB-SLAM2, sensor nodes (including camera) and Arduino serial node started from the UI.
 
-**Static test (rotating in place):** ORB-SLAM2 initialized, and turning on the spot produced a rough map of the room. But pure rotation doesn't give the parallax needed to estimate landmark depth, so the result has a lot of error.
+**Static test (rotation in place)**
+
+- **Procedure:** ORB-SLAM2 initialized; vehicle rotated on the spot.
+- **Result:** coarse room map produced.
+- **Observed issues:** pure rotation provides no parallax for landmark depth estimation → high map error.
 
 <p align="center">
   <img src="docs/images/slam-static-test.jpg" alt="ORB-SLAM2 static test" width="720"><br>
   <em>Figure 20: ORB-SLAM2 static test (rotation around the vehicle's y axis)</em>
 </p>
 
-**Small scene:** no problems initializing, and the reconstruction was **very accurate**. Tracking was lost only now and then, during fast turns.
+**Small scene**
+
+- **Procedure:** mapping of a small scene.
+- **Result:** initialization without issues; reconstruction **very accurate**.
+- **Observed issues:** occasional tracking loss during fast turns.
 
 <p align="center">
   <img src="docs/images/slam-small-scene.jpg" alt="ORB-SLAM2 small scene" width="720"><br>
   <em>Figure 21: ORB-SLAM2 example</em>
 </p>
 
-**Whole room:** initialization was harder, because of the lighting and the small number of objects in the room. Then the camera mounting turned out to be a problem. It pointed so that much of the view was floor, and the room has a carpet with a busy blue pattern. ORB-SLAM2 latched onto the carpet's features, which badly distorted the map and made it useless. Moving the camera to the **highest point** of the frame and **tilting it slightly up** partly fixed this.
+**Whole room**
 
-Even so, results were poor in rooms with **few objects** or with **repetitive, similar-looking objects**. Mapping worked in smaller parts of such spaces. Elsewhere, new points were often matched to already-mapped areas, which spoiled the whole map, and after a while tracking was often lost.
+- **Procedure:** mapping of the full room.
+- **Result:** mapping succeeded in smaller sub-areas only.
+- **Observed issues:**
+  - Initialization was harder due to lighting and the low number of objects in the room.
+  - Original camera mount pointed largely at the floor; ORB-SLAM2 tracked features of a carpet with a dense blue pattern, distorting the map beyond use. Mitigation: camera moved to the **highest point** of the frame and **tilted slightly upward** (partial fix).
+  - Poor results in rooms with **few objects** or **repetitive, similar-looking objects**: new points matched to already-mapped areas, corrupting the map; tracking frequently lost after some time.
 
 <p align="center">
   <img src="docs/images/slam-manual-drive.jpg" alt="Manual control with ORB-SLAM2" width="720"><br>
@@ -391,13 +508,28 @@ Even so, results were poor in rooms with **few objects** or with **repetitive, s
 
 ## 4. Conclusion
 
-The goal was to design and build a vehicle for mapping small, hard-to-reach spaces, with both manual and autonomous control. The work was split into construction and wiring, manual control, autonomous mode, and mapping and localization.
+A vehicle for mapping small, hard-to-reach spaces with manual and autonomous control was designed, built and tested per component (construction and wiring, manual control, autonomous mode, mapping and localization).
 
-- **Hardware:** despite early worries about overheating and performance, the **Raspberry Pi** proved good enough. The **Arduino** did its job fully. The motor shield worked as expected, but a newer, more compact version exists. The old one uses bulky through-hole parts, which makes the vehicle taller and raises its center of gravity. The voltage regulator is adequate but would need a heatsink for long-term use.
-- **Software:** the sensor nodes were simple (basic arithmetic and GPIO). The autonomous-mode node supports both manual and autonomous control. It's missing a **state machine that manages the SLAM node**: one that initializes mapping and takes over to recover when tracking is lost. The SLAM state is currently only shown in the UI.
-- **User interface:** it covers everything remote control needs. However, the video wrapper sometimes **froze the whole application** on a weak Wi-Fi signal. Once the vehicle-side part was in place, the **SSH-based** interface turned out to be almost as capable as Rosbridge.
+**Hardware**
 
-Each part was tested as it was built. The technologies and approaches used met the project's goals with varying success. The mapping and localization would probably work better with **better sensors**, including in poor lighting.
+- **Raspberry Pi 3:** performance and thermal behavior sufficient, contrary to initial concerns; fan and heatsinks required (see [3.2.2](#322-system-test)).
+- **Arduino UNO:** fully met requirements.
+- **Motor shield:** functional; uses bulky through-hole components that increase height and raise the center of gravity. A newer, more compact version exists.
+- **Voltage regulator:** adequate; requires a heatsink for long-term operation.
+
+**Software**
+
+- Sensor nodes: basic arithmetic and GPIO access.
+- Autonomous-mode node: supports manual and autonomous control.
+- Missing: a **state machine managing the SLAM node** (mapping initialization, recovery after tracking loss). SLAM state is currently displayed in the UI only.
+
+**User interface**
+
+- Covers all functions required for remote control.
+- Known issue: the video wrapper occasionally **froze the entire application** under weak Wi-Fi signal.
+- The **SSH-based** interface provides functionality close to Rosbridge.
+
+**Mapping and localization:** results are limited by the sensor; **better sensors** are expected to improve performance, including in poor lighting.
 
 ## Repository layout
 
@@ -421,7 +553,7 @@ BP/
 
 ## Appendix A – Costs
 
-A side goal was to keep costs down by reusing components already on hand and buying cheap versions of the electronics.
+Cost reduction: reuse of existing components and low-cost electronics variants.
 
 | Component | Price (CZK) |
 |---|---:|

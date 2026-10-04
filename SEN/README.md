@@ -3,23 +3,23 @@
 **SEN course project** · Brno University of Technology, Faculty of Information Technology · 2018/2019
 **Author:** Pavel Koupý
 
-> English adaptation of the original Czech project documentation ([`dokumentace.pdf`](dokumentace.pdf)) and Raspberry Pi install notes ([`instalace_rpi.txt`](instalace_rpi.txt)). The text is translated and lightly condensed. Details missing from the PDF were filled in from the source code.
+> English adaptation of the original Czech project documentation ([`dokumentace.pdf`](dokumentace.pdf)) and Raspberry Pi install notes ([`instalace_rpi.txt`](instalace_rpi.txt)). The text is translated and condensed. Details missing from the PDF are taken from the source code.
 
 <p align="center">
   <img src="docs/images/hardware-photos.jpg" alt="Photos of the sensor and the 230 V switching module" width="720"><br>
-  <em>Figure 1: The finished hardware. From left: the open sensor housing with the ESP32 and Li-Po battery, the housing with the ultrasonic sensor mount, the top cover with the solar panel, and the 230 V switching module with its Superseal connector and socket.</em>
+  <em>Figure 1: Hardware. From left: open sensor housing with ESP32 and Li-Po battery; housing with ultrasonic sensor mount; top cover with solar panel; 230 V switching module with Superseal connector and socket.</em>
 </p>
 
 ## Overview
 
-The goal was to build a sensor that measures the water level in a tank using an **ESP32** and an **ultrasonic distance sensor**. The sensor sends its measurements to a server (an **MQTT broker**), where they can be read and stored. In the code the device is called **UWLS** (ultrasonic water level sensor).
+Battery-powered tank water level sensor based on an **ESP32** and an **HC-SR04 ultrasonic distance sensor**. Measurements are published to an **MQTT broker** on a Raspberry Pi, stored in MySQL and displayed by PHP pages. Firmware identifier: **UWLS** (ultrasonic water level sensor).
 
-On top of the assignment, the sensor can also:
+Additional functions:
 
-- measure air temperature and humidity,
-- switch two 230 V AC devices,
-- recharge its battery from a solar panel,
-- be configured for the size of the tank.
+- air temperature and humidity measurement (DHT11),
+- switching of two 230 V AC loads (relay module),
+- solar battery charging,
+- configurable tank dimensions (manual entry or calibration).
 
 ## Contents
 
@@ -40,15 +40,23 @@ On top of the assignment, the sensor can also:
 
 ## 1. Hardware
 
-Several components had to be connected. Distance is measured with a simple ultrasonic ping. A temperature and humidity sensor was added for wider use. A separate module that switches two 230 V AC devices can also be plugged in, through a waterproof connector. It could drive, for example, an irrigation pump or a valve that refills the tank.
+| Function | Implementation |
+|---|---|
+| Distance measurement | Ultrasonic ping (HC-SR04) |
+| Ambient sensing | DHT11 temperature/humidity |
+| Load switching | Separate 2-channel 230 V AC module, connected via a waterproof **Superseal** connector (intended loads: e.g. irrigation pump, tank refill valve) |
+| Power | 3.7 V Li-Po, solar charged |
 
-A real deployment would need some degree of waterproofing. This is demonstrated by the **Superseal** waterproof connector used for the switching module, and by the housing design:
+Weather protection:
 
-- The top cover with the solar panel overhangs the body and is slightly sloped, so water doesn't run inside.
-- All cables leave through the bottom, sealed with rubber grommets and hot glue.
-- The ultrasonic sensor can at most handle splashing water. In its current state it isn't ready for outdoor use.
+- Top cover with solar panel overhangs the body and is sloped to shed water.
+- All cables exit through the bottom, sealed with rubber grommets and hot glue.
+- The ultrasonic sensor is splash-resistant at most; the assembly is not rated for outdoor use.
 
-All housing parts are 3D-printed in **PLA** at **0.35 mm** layer height, without supports (models in [`model_tisk/`](model_tisk)). The switching module uses a generic off-the-shelf prototyping enclosure.
+Enclosure:
+
+- Sensor housing: 3D-printed, **PLA**, **0.35 mm** layer height, no supports (models in [`model_tisk/`](model_tisk)).
+- Switching module: generic off-the-shelf prototyping enclosure.
 
 ### 1.1 Parts list
 
@@ -72,14 +80,23 @@ ESP32 pin assignment (from [`senzor.ino`](src/senzor/senzor.ino)):
 | 25 | HC-SR04 Trigger |
 | 33 | HC-SR04 Echo (through the level shifter) |
 | 32 | DHT11 data (4.7 kΩ pull-up) |
-| 26 | Relay IN1, also the buzzer/LED used for calibration (Superseal pin 4) |
+| 26 | Relay IN1; also calibration buzzer/LED (Superseal pin 4) |
 | 27 | Relay IN2 (Superseal pin 3) |
 
-The Superseal connector to the switching module carries: pin 1 GND, pin 2 5 V, pin 3 GPIO27, pin 4 GPIO26. The module's own MT3608 boosts the 5 V to 12 V for the relays.
+Superseal connector (sensor ↔ switching module):
+
+| Pin | Signal |
+|---|---|
+| 1 | GND |
+| 2 | 5 V |
+| 3 | GPIO27 |
+| 4 | GPIO26 |
+
+The module's MT3608 boosts 5 V to 12 V for the relay coils.
 
 ## 2. Software
 
-The software has three parts: the sensor firmware, the server setup, and visualization and further processing of the data.
+Three components: sensor firmware, server services, and data visualization/processing.
 
 ```mermaid
 flowchart LR
@@ -89,24 +106,29 @@ flowchart LR
     B <--> W[PHP web pages<br>Apache]
     D --> W
 ```
-<p align="center"><em>Figure 3: Data flow (all server parts run on the Raspberry Pi)</em></p>
+<p align="center"><em>Figure 3: Data flow (all server components run on the Raspberry Pi)</em></p>
 
 ### 2.1 ESP32 firmware
 
-The sensor is programmed in the **Arduino IDE** with the **ESP32-Arduino** core ([`senzor.ino`](src/senzor/senzor.ino)). The whole design aims to save as much energy as possible: after finishing its tasks, the ESP32 enters **deep sleep**. Data is sent over **MQTT** using the [PubSubClient](https://github.com/knolleary/pubsubclient) library.
+- Source: [`senzor.ino`](src/senzor/senzor.ino); toolchain: **Arduino IDE** with the **ESP32-Arduino** core.
+- MQTT client: [PubSubClient](https://github.com/knolleary/pubsubclient).
+- Power strategy: **deep sleep** between measurement cycles.
 
-On each wake-up the sensor:
+Wake-up cycle:
 
-1. connects to Wi-Fi and the MQTT broker and subscribes to the command topics,
-2. reads temperature and humidity from the DHT11. The **DHTesp** library also computes the **heat index** (feels-like temperature) and **dew point**. These derived values aren't exact, because the formula uses a fixed barometric pressure and the sensor has no pressure sensor,
-3. measures the distance to the water surface (`duration × 0.034 / 2`, in cm),
-4. computes the water volume and fill level from the calibrated tank size (see [Calibration](#24-calibration)),
-5. publishes everything as retained messages,
-6. handles incoming commands for about 10 s (200 × 50 ms), then goes back to sleep.
+1. Connect to Wi-Fi and the MQTT broker; subscribe to command topics.
+2. Read temperature and humidity from the DHT11. The **DHTesp** library derives **heat index** and **dew point**; these are approximate, since the formula assumes a fixed barometric pressure (no pressure sensor present).
+3. Measure distance to the water surface: `duration × 0.034 / 2` [cm].
+4. Compute water volume and fill level from the calibrated tank dimensions (see [Calibration](#24-calibration)).
+5. Publish all values as retained messages.
+6. Process incoming commands for ~10 s (200 × 50 ms), then enter deep sleep.
 
-The sleep period is **60 s**. If any measured or computed value is invalid, the sensor publishes `UWLS ERROR` to `uwls/debug` and sleeps for **300 s** instead.
+| Condition | Sleep period |
+|---|---|
+| Normal | **60 s** |
+| Any measured/computed value invalid | **300 s**; `UWLS ERROR` published to `uwls/debug` |
 
-Because the sensor sleeps most of the time, commands for it are sent as **retained** messages, so it picks them up when it wakes.
+Commands are sent as **retained** messages so the sensor receives them on its next wake-up.
 
 | Topic | Direction | Content |
 |---|---|---|
@@ -122,17 +144,22 @@ Because the sensor sleeps most of the time, commands for it are sent as **retain
 | `uwls/cmd/width`, `uwls/cmd/height` | → sensor | `1` followed by the tank diameter / height, saved to flash |
 | `uwls/cmd/calibration` | → sensor | `1` = start calibration |
 
-Volume is computed for a cylindrical tank: *V* = π · *d*² / 4 · (*h*<sub>tank</sub> − *distance*), converted from cm³ to litres.
+Volume (cylindrical tank): *V* = π · *d*² / 4 · (*h*<sub>tank</sub> − *distance*), converted from cm³ to litres.
 
 ### 2.2 Server
 
-The server is a Raspberry Pi running **Raspbian**, with the **Mosquitto** MQTT broker and an **Apache** web server with **PHP** and a **MySQL** database. None of these come with the base system, so they have to be installed and partly configured. See [Raspberry Pi setup](#3-raspberry-pi-setup).
+Platform: Raspberry Pi, **Raspbian**, with **Mosquitto** (MQTT broker), **Apache** + **PHP**, and **MySQL**. None are part of the base image; installation is described in [Raspberry Pi setup](#3-raspberry-pi-setup).
 
-An important piece is copying data from the MQTT topics into the MySQL database, so statistics and further calculations are possible. This is done by a Python script, [`mqtt2db.py`](src/mqtt2db/mqtt2db.py), using the [Eclipse Paho](https://www.eclipse.org/paho/clients/python/docs/) client. It runs at system startup ([`crontab.txt`](src/mqtt2db/crontab.txt), an `@reboot` cron entry), listens on the sensor's `uwls/raw/*` and `uwls/calc/*` topics in an endless loop and inserts every message into the database. The first part of the topic is looked up by name in the `sensor` table, so that table needs a row named `uwls`.
+MQTT → MySQL bridge: [`mqtt2db.py`](src/mqtt2db/mqtt2db.py)
+
+- Client library: [Eclipse Paho](https://www.eclipse.org/paho/clients/python/docs/).
+- Started at boot by an `@reboot` cron entry ([`crontab.txt`](src/mqtt2db/crontab.txt)).
+- Subscribes to `uwls/raw/*` and `uwls/calc/*` in an endless loop; inserts every message into the database.
+- The first topic segment is resolved by name in the `sensor` table; a row named `uwls` must exist.
 
 ### 2.3 Visualization
 
-The data is shown through Apache and PHP, using [Mosquitto-PHP](https://github.com/mgdm/Mosquitto-PHP) as the MQTT client and the MySQL database for stored data. There are several demo pages ([`src/web/`](src/web)) sized for the Pi's small touch display. The styling is basic and only meant as a demo. To speed things up, free [Bootstrap snippets](https://bootsnipp.com) were used with small changes.
+Pages in [`src/web/`](src/web) are served by Apache/PHP, read live values via [Mosquitto-PHP](https://github.com/mgdm/Mosquitto-PHP) and historical data from MySQL. Layout targets the Pi's 3.2" touch display; styling is demo-grade, based on modified [Bootstrap snippets](https://bootsnipp.com).
 
 | Page | Content |
 |---|---|
@@ -149,21 +176,23 @@ The data is shown through Apache and PHP, using [Mosquitto-PHP](https://github.c
 
 ### 2.4 Calibration
 
-Calibration is started from the settings page. Its steps are signalled by an LED or a piezo buzzer connected to the Superseal connector between pin 4 (data) and ground on pin 1.
+Triggered from the settings page. Progress is signalled by an LED or piezo buzzer on the Superseal connector, pin 4 (data) to pin 1 (GND).
 
-1. When the sensor wakes and finds a calibration request, the buzzer **beeps twice**.
-2. The user has **10 seconds** to point the sensor across the tank to measure its **diameter**.
-3. The end of that measurement is signalled by **one long beep**.
-4. The user has another **10 seconds** to put the sensor back in its normal position, to measure the **height of the empty tank**.
-5. The end of calibration is signalled by **two beeps**.
+| Step | Signal / action |
+|---|---|
+| 1 | Calibration request detected on wake-up: **two beeps** |
+| 2 | **10 s** window: sensor aimed across the tank to measure **diameter** |
+| 3 | Diameter captured: **one long beep** |
+| 4 | **10 s** window: sensor returned to normal position to measure **empty tank height** |
+| 5 | Calibration complete: **two beeps** |
 
-The measured values are written to **flash** (SPIFFS files `/calibration_width.txt` and `/calibration_height.txt`). They're read on every wake-up and used to compute the volume and fill level. The same values can also be entered by hand on the settings page.
+Results are stored in flash (SPIFFS: `/calibration_width.txt`, `/calibration_height.txt`), loaded on every wake-up and used for volume and fill-level computation. Both values can alternatively be entered manually on the settings page.
 
-> **Note (from the code):** pin 4 of the connector is GPIO26, which also drives relay 1, so the calibration signal goes to the relay input when the switching module is plugged in.
+> **Note (from the code):** connector pin 4 is GPIO26, which also drives relay 1; with the switching module connected, the calibration signal drives the relay input.
 
 ## 3. Raspberry Pi setup
 
-Translated from [`instalace_rpi.txt`](instalace_rpi.txt). Commands are as in the original notes, with passwords replaced by placeholders.
+Source: [`instalace_rpi.txt`](instalace_rpi.txt). Commands are reproduced as in the original; passwords are replaced by placeholders.
 
 ### Mosquitto MQTT broker
 
@@ -177,7 +206,7 @@ sudo apt-get update
 sudo apt-get install mosquitto mosquitto-clients mosquitto-dev
 ```
 
-Set a password:
+Password setup:
 
 ```bash
 sudo service mosquitto stop
@@ -188,7 +217,7 @@ sudo mosquitto_passwd -c /etc/mosqruitto/passwd
 sudo mosquitto -c /etc/mosquitto/passwd
 ```
 
-> The notes contain a typo (`/etc/mosqruitto/` should be `/etc/mosquitto/`). Also, `mosquitto -c` expects a configuration file. Normally you'd point `password_file` in `/etc/mosquitto/mosquitto.conf` at the password file and restart the service.
+> Errata in the original notes: `/etc/mosqruitto/` should be `/etc/mosquitto/`; `mosquitto -c` expects a configuration file. Correct procedure: set `password_file` in `/etc/mosquitto/mosquitto.conf` to the password file and restart the service.
 
 ### Environment
 
@@ -216,7 +245,11 @@ sudo service apache2 restart
 
 ### Python Paho client (`mqtt2db` script)
 
-This section is empty in the original notes. The script imports `paho.mqtt.client` and `mysql.connector`, so it needs the `paho-mqtt` and `mysql-connector-python` packages. Copy it to `/home/pi/mqtt2db.py` and add the line from [`crontab.txt`](src/mqtt2db/crontab.txt) with `crontab -e`.
+Empty in the original notes. Requirements derived from the script imports (`paho.mqtt.client`, `mysql.connector`):
+
+1. Install `paho-mqtt` and `mysql-connector-python`.
+2. Copy the script to `/home/pi/mqtt2db.py`.
+3. Add the line from [`crontab.txt`](src/mqtt2db/crontab.txt) via `crontab -e`.
 
 ### Database
 
@@ -251,21 +284,34 @@ create table sen_iot.data(
 );
 ```
 
-`mqtt2db.py` splits each topic (e.g. `uwls/raw/temp`) into the sensor name (`uwls` → `sensor_id`), `quantity_type` (`raw`/`calc`) and `quantity` (`temp`).
+Topic-to-column mapping in `mqtt2db.py` (example `uwls/raw/temp`):
+
+| Topic segment | Column |
+|---|---|
+| `uwls` | `sensor_id` (lookup by `sensor.name`) |
+| `raw` / `calc` | `quantity_type` |
+| `temp` | `quantity` |
 
 ### Configuration
 
-Wi-Fi, MQTT and database credentials are hard-coded. Set them in [`senzor.ino`](src/senzor/senzor.ino) (`WIFI_*`, `MQTT_*`; `MQTT_SERVER` must be the Pi's IP address, not `localhost`), [`mqtt2db.py`](src/mqtt2db/mqtt2db.py) and the PHP pages in [`src/web/`](src/web).
+Wi-Fi, MQTT and database credentials are hard-coded in:
+
+- [`senzor.ino`](src/senzor/senzor.ino): `WIFI_*`, `MQTT_*`; `MQTT_SERVER` must be the Pi's IP address, not `localhost`,
+- [`mqtt2db.py`](src/mqtt2db/mqtt2db.py),
+- the PHP pages in [`src/web/`](src/web).
 
 ## 4. Conclusion
 
-The sensor was successfully built and works. The housing and some other parts need more testing. The assignment was met, though some parts are only demonstrations.
+Status:
 
-Possible improvements:
+- Sensor is functional; all assignment requirements are met, some features at demonstration level only.
+- Housing and several other parts are insufficiently tested.
 
-- **Dynamic Wi-Fi configuration**, e.g. over Bluetooth from an Android device. Apps for this kind of setup already exist.
-- The **ultrasonic sensor** needs a few more design iterations before it's usable outdoors. It could be replaced with the waterproof **JSN-SR04T**, but that one only measures from about 20 cm.
-- In a real deployment, an existing open **IoT framework**, which already includes management and visualization tools, would probably work better.
+Known limitations and proposed improvements:
+
+- **Wi-Fi credentials are static.** Proposed: runtime configuration, e.g. over Bluetooth from an Android device (existing apps support this).
+- **Ultrasonic sensor is not weatherproof.** Requires further design iterations for outdoor use; alternative: waterproof **JSN-SR04T** (minimum range ~20 cm).
+- **Custom server stack.** For production use, an existing open **IoT framework** with built-in management and visualization is more suitable.
 
 ## Repository layout
 
